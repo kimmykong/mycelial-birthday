@@ -12,12 +12,6 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
   const sessionId = getSessionId(cookies);
   const { word } = await request.json();
 
-  // Check submission count
-  const count = await getSubmissionCount(sessionId);
-  if (count >= 5) {
-    return json({ error: 'Maximum 5 submissions reached' }, { status: 400 });
-  }
-
   // Validate word
   const trimmedWord = word?.trim();
   if (!trimmedWord || trimmedWord.length === 0) {

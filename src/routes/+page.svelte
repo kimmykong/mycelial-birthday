@@ -12,8 +12,30 @@
   let adjectives = $state(data.adjectives);
   let modalOpen = $state(true);
   let updateKey = $state(0);
+  let inputElement: HTMLInputElement;
 
-  const isDone = $derived(submissionCount >= 5);
+  let bonusRoundStart = $state(0);
+  const isDone = $derived(submissionCount >= 5 + bonusRoundStart);
+  let continueSubmitting = $state(false);
+
+  // Focus input when modal opens
+  $effect(() => {
+    if (modalOpen && (!isDone || continueSubmitting) && inputElement) {
+      setTimeout(() => inputElement.focus(), 100);
+    }
+  });
+
+  function addMoreWords() {
+    bonusRoundStart = submissionCount;
+    continueSubmitting = true;
+  }
+
+  // Reset continueSubmitting when they complete the bonus round
+  $effect(() => {
+    if (isDone && continueSubmitting) {
+      continueSubmitting = false;
+    }
+  });
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
@@ -44,6 +66,9 @@
         console.log('Fetched new adjectives:', newAdjectives.length, 'words');
         adjectives = newAdjectives;
         updateKey++; // Force re-render
+
+        // Refocus input after submission
+        setTimeout(() => inputElement?.focus(), 100);
       } else {
         error = result.error || 'Failed to submit word';
       }
@@ -131,23 +156,24 @@
 
   <!-- Modal -->
   {#if modalOpen}
-    <div class="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-3xl px-6 pb-8" style="bottom: 0 !important;">
+    <div class="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl px-6 pb-8" style="bottom: 0 !important; max-width: min(576px, calc(100vw - 48px));">
       <!-- Modal Content - Translucent with backdrop blur -->
       <div class="relative bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.3)] border border-white/20">
         <!-- Close button -->
-        {#if !isDone}
+        {#if !isDone || continueSubmitting}
           <button
             onclick={closeModal}
-            class="absolute top-6 right-6 text-gray-700 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-full w-11 h-11 flex items-center justify-center transition-all hover:scale-110 shadow-md"
+            class="absolute text-gray-600 hover:text-gray-900 bg-white hover:bg-gray-100 rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg border border-gray-300 z-10"
+            style="top: 16px; right: 16px; width: 48px; height: 48px; min-width: 48px; min-height: 48px;"
             aria-label="Close"
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <svg style="width: 28px; height: 28px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         {/if}
 
-        {#if !isDone}
+        {#if !isDone || continueSubmitting}
           <div class="px-10 sm:px-16 pt-14 pb-12 text-center">
             <!-- Question -->
             <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4 leading-tight" style="font-family: 'Inter', -apple-system, sans-serif; background: linear-gradient(to right, #9333ea, #ec4899, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
@@ -155,23 +181,28 @@
             </h1>
 
             <!-- Progress -->
-            <div class="flex justify-center items-center gap-2 mb-12">
+            <div class="flex justify-center items-center gap-3 mb-8 mt-6" style="min-height: 20px;">
               {#each Array(5) as _, i}
-                <div class="w-2.5 h-2.5 rounded-full transition-all duration-300 {i < submissionCount ? 'bg-gradient-to-r from-purple-500 to-pink-500 scale-110' : 'bg-gray-300'}"></div>
+                {@const currentProgress = submissionCount - bonusRoundStart}
+                <div
+                  class="rounded-full transition-all duration-300 {i < currentProgress ? 'bg-gradient-to-r from-purple-500 to-pink-500 shadow-md' : 'bg-gray-400'}"
+                  style="width: 12px; height: 12px; min-width: 12px; min-height: 12px;"
+                ></div>
               {/each}
             </div>
 
-            <form onsubmit={handleSubmit} class="max-w-lg mx-auto space-y-5">
+            <form onsubmit={handleSubmit} class="space-y-5 flex flex-col items-center">
               <!-- Input Field -->
               <input
+                bind:this={inputElement}
                 type="text"
                 bind:value={word}
                 disabled={loading}
-                class="w-full px-6 py-5 bg-white/70 border-2 border-gray-200/50 text-gray-900 text-xl rounded-2xl focus:bg-white focus:border-purple-400 focus:ring-4 focus:ring-purple-100 outline-none placeholder-gray-400 transition-all shadow-lg hover:shadow-xl backdrop-blur-sm"
+                class="px-6 py-4 bg-gradient-to-br from-white/90 to-white/70 border-2 border-purple-200/60 text-gray-900 text-lg rounded-full focus:from-white focus:to-white/95 focus:border-purple-400 focus:ring-4 focus:ring-purple-100/50 outline-none placeholder-gray-400 transition-all duration-300 backdrop-blur-sm"
                 placeholder="Type an adjective..."
                 maxlength="50"
                 required
-                style="font-family: 'Inter', -apple-system, sans-serif;"
+                style="font-family: 'Inter', -apple-system, sans-serif; width: 320px; max-width: 90vw; box-shadow: 0 8px 32px rgba(147, 51, 234, 0.12), 0 4px 16px rgba(236, 72, 153, 0.08);"
               />
 
               {#if error}
@@ -182,8 +213,8 @@
               <button
                 type="submit"
                 disabled={loading}
-                class="w-full bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 hover:from-orange-600 hover:via-pink-600 hover:to-purple-700 text-white py-5 px-10 rounded-2xl font-bold text-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl hover:scale-[1.03] hover:brightness-110"
-                style="font-family: 'Inter', -apple-system, sans-serif;"
+                class="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 hover:from-orange-600 hover:via-pink-600 hover:to-purple-700 text-white py-4 px-8 rounded-full font-bold text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.03] hover:brightness-110"
+                style="font-family: 'Inter', -apple-system, sans-serif; width: 320px; max-width: 90vw; box-shadow: 0 12px 40px rgba(147, 51, 234, 0.3), 0 6px 20px rgba(236, 72, 153, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;"
               >
                 {loading ? 'Submitting...' : 'Submit'}
               </button>
@@ -196,15 +227,24 @@
               Thank you!
             </h2>
             <p class="text-xl text-gray-700 mb-10" style="font-family: 'Inter', -apple-system, sans-serif;">
-              You've submitted all 5 adjectives.
+              You've submitted 5 adjectives. Want to add more?
             </p>
-            <button
-              onclick={closeModal}
-              class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-4 px-10 rounded-2xl font-bold text-lg transition-all shadow-lg hover:shadow-xl hover:scale-105"
-              style="font-family: 'Inter', -apple-system, sans-serif;"
-            >
-              Close
-            </button>
+            <div class="flex gap-4 justify-center flex-wrap">
+              <button
+                onclick={addMoreWords}
+                class="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 hover:from-orange-600 hover:via-pink-600 hover:to-purple-700 text-white py-4 px-8 rounded-full font-bold text-lg transition-all duration-300 hover:scale-[1.03] hover:brightness-110"
+                style="font-family: 'Inter', -apple-system, sans-serif; box-shadow: 0 12px 40px rgba(147, 51, 234, 0.3), 0 6px 20px rgba(236, 72, 153, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;"
+              >
+                Add More
+              </button>
+              <button
+                onclick={closeModal}
+                class="bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 py-4 px-8 rounded-full font-bold text-lg transition-all duration-300 hover:scale-[1.03] border-2 border-gray-300"
+                style="font-family: 'Inter', -apple-system, sans-serif; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.08);"
+              >
+                Close
+              </button>
+            </div>
           </div>
         {/if}
       </div>

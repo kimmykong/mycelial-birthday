@@ -78,42 +78,47 @@
   </div>
 
   <!-- Login Modal -->
-  <div class="relative z-50 p-8 max-w-md w-full">
-    <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/20 p-10 sm:p-16">
-      <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-8 text-center leading-tight" style="font-family: 'Inter', -apple-system, sans-serif; background: linear-gradient(to right, #9333ea, #ec4899, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-        Welcome
-      </h1>
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-xl px-6" style="max-width: min(576px, calc(100vw - 48px));">
+    <div class="relative bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.3)] border border-white/20">
+      <div class="px-10 sm:px-16 pt-14 pb-12 text-center">
+        <!-- Question -->
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 leading-tight" style="font-family: 'Inter', -apple-system, sans-serif; background: linear-gradient(to right, #9333ea, #ec4899, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+          Welcome to Kim's Birthday
+        </h1>
 
-      <form on:submit|preventDefault={handleSubmit} class="space-y-5">
-        <div>
-          <label for="password" class="block text-sm font-medium text-gray-700 mb-2" style="font-family: 'Inter', -apple-system, sans-serif;">
-            Enter Password
-          </label>
+        <!-- Progress placeholder for alignment -->
+        <div class="flex justify-center items-center gap-3 mb-8 mt-6" style="min-height: 20px;">
+          <!-- Empty space to match adjectives modal layout -->
+        </div>
+
+        <form onsubmit={handleSubmit} class="space-y-5 flex flex-col items-center">
+          <!-- Input Field -->
           <input
             id="password"
             type="password"
             bind:value={password}
             disabled={loading}
-            class="w-full px-6 py-5 bg-white/70 border-2 border-gray-200/50 text-gray-900 text-xl rounded-2xl focus:bg-white focus:border-purple-400 focus:ring-4 focus:ring-purple-100 outline-none placeholder-gray-400 transition-all shadow-lg hover:shadow-xl backdrop-blur-sm"
-            placeholder="Password"
+            class="px-6 py-4 bg-gradient-to-br from-white/90 to-white/70 border-2 border-purple-200/60 text-gray-900 text-lg rounded-full focus:from-white focus:to-white/95 focus:border-purple-400 focus:ring-4 focus:ring-purple-100/50 outline-none placeholder-gray-400 transition-all duration-300 backdrop-blur-sm"
+            placeholder="Enter password..."
             required
-            style="font-family: 'Inter', -apple-system, sans-serif;"
+            style="font-family: 'Inter', -apple-system, sans-serif; width: 320px; max-width: 90vw; box-shadow: 0 8px 32px rgba(147, 51, 234, 0.12), 0 4px 16px rgba(236, 72, 153, 0.08);"
           />
-        </div>
 
-        {#if error}
-          <p class="text-red-500 text-sm font-medium" style="font-family: 'Inter', -apple-system, sans-serif;">{error}</p>
-        {/if}
+          {#if error}
+            <p class="text-red-500 text-sm font-medium">{error}</p>
+          {/if}
 
-        <button
-          type="submit"
-          disabled={loading}
-          class="w-full bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 hover:from-orange-600 hover:via-pink-600 hover:to-purple-700 text-white py-5 px-10 rounded-2xl font-bold text-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl hover:scale-[1.03] hover:brightness-110"
-          style="font-family: 'Inter', -apple-system, sans-serif;"
-        >
-          {loading ? 'Logging in...' : 'Enter'}
-        </button>
-      </form>
+          <!-- Submit Button - Rainbow gradient -->
+          <button
+            type="submit"
+            disabled={loading}
+            class="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 hover:from-orange-600 hover:via-pink-600 hover:to-purple-700 text-white py-4 px-8 rounded-full font-bold text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.03] hover:brightness-110"
+            style="font-family: 'Inter', -apple-system, sans-serif; width: 320px; max-width: 90vw; box-shadow: 0 12px 40px rgba(147, 51, 234, 0.3), 0 6px 20px rgba(236, 72, 153, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;"
+          >
+            {loading ? 'Logging in...' : 'Enter'}
+          </button>
+        </form>
+      </div>
     </div>
   </div>
 </div>

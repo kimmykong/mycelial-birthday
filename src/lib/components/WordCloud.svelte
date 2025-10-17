@@ -21,6 +21,8 @@
   let containerHeight = $state(0);
   let container: HTMLDivElement;
   let showDebug = $state(false);
+  let canvas: HTMLCanvasElement | null = null;
+  let ctx: CanvasRenderingContext2D | null = null;
 
   function getSizeForRank(index: number, scaleFactor: number = 1): number {
     if (index < 5) return 80 * scaleFactor;
@@ -126,18 +128,54 @@
   }
 
   function getTextWidth(text: string, fontSize: number): number {
-    // Tighter estimate for Arial bold
+    // Use canvas to measure actual text width
+    if (!ctx) {
+      if (!canvas) {
+        canvas = document.createElement('canvas');
+      }
+      ctx = canvas.getContext('2d');
+    }
+
+    if (ctx) {
+      ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+      return ctx.measureText(text).width;
+    }
+
+    // Fallback estimation if canvas not available
     return text.length * fontSize * 0.55;
+  }
+
+  function getTextHeight(text: string, fontSize: number): number {
+    // Use canvas to measure actual text height
+    if (!ctx) {
+      if (!canvas) {
+        canvas = document.createElement('canvas');
+      }
+      ctx = canvas.getContext('2d');
+    }
+
+    if (ctx) {
+      ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+      const metrics = ctx.measureText(text);
+      // actualBoundingBoxAscent + actualBoundingBoxDescent gives the actual height
+      const ascent = metrics.actualBoundingBoxAscent || fontSize * 0.8;
+      const descent = metrics.actualBoundingBoxDescent || fontSize * 0.2;
+      // Add asymmetric padding: 10% on ascent, 30% on descent (descenders need more space)
+      return ascent * 1.1 + descent * 1.3;
+    }
+
+    // Fallback estimation if canvas not available
+    return fontSize * 1.2;
   }
 
   function wordsOverlap(word1: Word, word2: Word): boolean {
     const w1 = getTextWidth(word1.text, word1.size);
-    const h1 = word1.size * 1.2; // Add extra height for descenders
+    const h1 = getTextHeight(word1.text, word1.size);
     const w2 = getTextWidth(word2.text, word2.size);
-    const h2 = word2.size * 1.2;
+    const h2 = getTextHeight(word2.text, word2.size);
 
-    // Add padding - minimal to allow words to pack tightly
-    const padding = 0;
+    // Add small padding to prevent tight overlaps
+    const padding = 2;
 
     const horizontalOverlap = !(
       word1.x + w1/2 + padding < word2.x - w2/2 ||
@@ -166,7 +204,7 @@
   ): Word | null {
     const size = getSizeForRank(index, scaleFactor);
     const wordWidth = getTextWidth(adj.word, size);
-    const wordHeight = size * 1.2;
+    const wordHeight = getTextHeight(adj.word, size);
 
     if (region === 'stem') {
       // Stem - vertically stacked, centered horizontally
@@ -175,11 +213,12 @@
       const y = stemCurrentY * scale + offsetY;
 
       const insideMushroom = isInsideMushroom(x, y, wordWidth, wordHeight);
-      if (insideMushroom && stemCurrentY + (wordHeight / scale) <= 188) {
+      const spacingBetweenWords = 4 / scale; // 4px spacing between words
+      if (insideMushroom && stemCurrentY + (wordHeight / scale) + spacingBetweenWords <= 188) {
         const color = getColorForPosition(y, offsetY, scale);
         const newWord = { text: adj.word, size, x, y, color };
-        // Advance Y position for next word (touching bounds)
-        stemCurrentY += (wordHeight / scale);
+        // Advance Y position for next word with spacing
+        stemCurrentY += (wordHeight / scale) + spacingBetweenWords;
         return newWord;
       }
       return null;
@@ -253,7 +292,21 @@
 
     const { scale, offsetX, offsetY } = getMushroomBounds();
 
-    let scaleFactor = 1;
+    // Start with larger scale for fewer words
+    // Scale from 1.0 (30+ words) to 2.0 (1-5 words)
+    const wordCount = wordsToDisplay.length;
+    let initialScaleFactor = 1.0;
+    if (wordCount <= 5) {
+      initialScaleFactor = 2.0;
+    } else if (wordCount <= 10) {
+      initialScaleFactor = 1.6;
+    } else if (wordCount <= 15) {
+      initialScaleFactor = 1.4;
+    } else if (wordCount <= 20) {
+      initialScaleFactor = 1.2;
+    }
+
+    let scaleFactor = initialScaleFactor;
     let placedWords: Word[] = [];
     let allPlaced = false;
 
@@ -401,18 +454,8 @@
         xmlns="http://www.w3.org/2000/svg"
         class="w-full h-full"
       >
-        <!-- Always show mushroom outline -->
-        <path
-          d="m 25,95 c 0,-40 40,-65 75,-65 35,0 75,25 75,65 0,10 -5,15 -15,15 h -35 c 0,40 4.21377,84 -25,84 -29.213771,0 -25,-44 -25,-84 H 40 C 30,110 25,105 25,95 Z"
-          fill="none"
-          stroke="#ffffff"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          opacity="0.3"
-        />
-
         {#if showDebug}
+          <!-- Mushroom outline -->
           <path
             d="m 25,95 c 0,-40 40,-65 75,-65 35,0 75,25 75,65 0,10 -5,15 -15,15 h -35 c 0,40 4.21377,84 -25,84 -29.213771,0 -25,-44 -25,-84 H 40 C 30,110 25,105 25,95 Z"
             fill="none"
@@ -448,8 +491,8 @@
 
   <!-- Words -->
   {#each words as word (word.text)}
-    {@const wordWidth = word.text.length * word.size * 0.55}
-    {@const wordHeight = word.size * 1.2}
+    {@const wordWidth = getTextWidth(word.text, word.size)}
+    {@const wordHeight = getTextHeight(word.text, word.size)}
 
     {#if showDebug}
       <!-- Debug: Word bounding box -->
