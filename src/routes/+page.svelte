@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import WordCloud from '$lib/components/WordCloud.svelte';
   import type { PageData } from './$types';
 
@@ -47,35 +46,47 @@
       return;
     }
 
+    const submittedWord = word.trim().toLowerCase();
+
+    // Optimistic update: clear input immediately
+    word = '';
     loading = true;
     error = '';
+
+    // Optimistic update: increment count immediately
+    const previousCount = submissionCount;
+    submissionCount = previousCount + 1;
 
     try {
       const response = await fetch('/api/adjectives', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ word, newSession: isNewSession })
+        body: JSON.stringify({ word: submittedWord, newSession: isNewSession })
       });
 
       const result = await response.json();
 
       if (response.ok) {
+        // Update with actual count from server
         submissionCount = result.count;
-        word = '';
         isNewSession = false; // Reset after first submission in new session
-        // Refresh adjectives
-        const adjectivesResponse = await fetch('/api/adjectives');
-        const newAdjectives = await adjectivesResponse.json();
-        console.log('Fetched new adjectives:', newAdjectives.length, 'words');
-        adjectives = newAdjectives;
+
+        // Update adjectives from POST response
+        adjectives = result.adjectives;
         updateKey++; // Force re-render
 
         // Refocus input after submission
         setTimeout(() => inputElement?.focus(), 100);
       } else {
+        // Rollback optimistic update on error
+        submissionCount = previousCount;
+        word = submittedWord; // Restore the word
         error = result.error || 'Failed to submit word';
       }
     } catch (err) {
+      // Rollback optimistic update on error
+      submissionCount = previousCount;
+      word = submittedWord; // Restore the word
       error = 'An error occurred. Please try again.';
     } finally {
       loading = false;
@@ -170,7 +181,7 @@
             style="top: 16px; right: 16px; width: 48px; height: 48px; min-width: 48px; min-height: 48px;"
             aria-label="Close"
           >
-            <svg style="width: 28px; height: 28px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <svg style="width: 28px; height: 28px;" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>

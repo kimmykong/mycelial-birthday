@@ -22,11 +22,14 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
     return json({ error: 'Word is too long' }, { status: 400 });
   }
 
-  // Submit adjective
+  // Submit adjective and return updated data in one response
   try {
     await submitAdjective(sessionId, trimmedWord);
-    const newCount = await getSubmissionCount(sessionId);
-    return json({ success: true, count: newCount });
+    const [newCount, adjectives] = await Promise.all([
+      getSubmissionCount(sessionId),
+      getTopAdjectives(30)
+    ]);
+    return json({ success: true, count: newCount, adjectives });
   } catch (error) {
     return json({ error: 'Failed to submit word' }, { status: 500 });
   }
