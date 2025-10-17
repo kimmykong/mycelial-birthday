@@ -4,7 +4,7 @@ import { submitAdjective, getTopAdjectives, getSubmissionCount } from '$lib/db';
 import { getSessionId } from '$lib/session';
 
 export const GET: RequestHandler = async () => {
-  const adjectives = getTopAdjectives(30);
+  const adjectives = await getTopAdjectives(30);
   return json(adjectives);
 };
 
@@ -13,7 +13,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
   const { word } = await request.json();
 
   // Check submission count
-  const count = getSubmissionCount(sessionId);
+  const count = await getSubmissionCount(sessionId);
   if (count >= 5) {
     return json({ error: 'Maximum 5 submissions reached' }, { status: 400 });
   }
@@ -30,8 +30,8 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
   // Submit adjective
   try {
-    submitAdjective(sessionId, trimmedWord);
-    const newCount = getSubmissionCount(sessionId);
+    await submitAdjective(sessionId, trimmedWord);
+    const newCount = await getSubmissionCount(sessionId);
     return json({ success: true, count: newCount });
   } catch (error) {
     return json({ error: 'Failed to submit word' }, { status: 500 });

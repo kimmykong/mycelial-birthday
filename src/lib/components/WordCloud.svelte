@@ -190,7 +190,7 @@
       const minY = 35;
       const maxY = 105;
 
-      for (let attempts = 0; attempts < 500; attempts++) {
+      for (let attempts = 0; attempts < 1000; attempts++) {
         const x = Math.random() * (maxX - minX) * scale + offsetX + minX * scale;
         const y = Math.random() * (maxY - minY) * scale + offsetY + minY * scale;
 
@@ -258,7 +258,7 @@
     let allPlaced = false;
 
     // Try with decreasing scale factors until all words fit
-    while (!allPlaced && scaleFactor >= 0.4) {
+    while (!allPlaced && scaleFactor >= 0.3) {
       placedWords = [];
       stemCurrentY = 115; // Reset stem Y position for each attempt
       console.log(`Attempting placement with scale factor: ${scaleFactor}`);
@@ -296,7 +296,8 @@
         }
       }
 
-      // Try to place remaining words in cap
+      // Try to place remaining words in cap with more attempts
+      const stillUnplaced: typeof wordsToDisplay = [];
       for (const adj of unplacedWords) {
         const index = wordsToDisplay.indexOf(adj);
         const word = tryPlaceWord(adj, index, scaleFactor, placedWords, 'cap', scale, offsetX, offsetY);
@@ -305,6 +306,7 @@
           placedWords.push(word);
           console.log(`✓ Placed overflow word "${adj.word}" in cap`);
         } else {
+          stillUnplaced.push(adj);
           console.warn(`✗ Still could not place "${adj.word}"`);
         }
       }
@@ -316,6 +318,12 @@
       } else {
         console.log(`⚠ Only placed ${placedWords.length}/${wordsToDisplay.length} words, reducing scale to ${(scaleFactor - 0.05).toFixed(2)}`);
         scaleFactor -= 0.05; // Smaller decrements for finer control
+
+        // If we've tried enough and have most words placed, accept it
+        if (scaleFactor < 0.3 && placedWords.length >= wordsToDisplay.length * 0.7) {
+          console.log(`⚠ Accepting ${placedWords.length}/${wordsToDisplay.length} words (70% threshold met)`);
+          allPlaced = true;
+        }
       }
     }
 
