@@ -4,10 +4,10 @@ export function generateSessionId(): string {
   return randomBytes(32).toString('hex');
 }
 
-export function getSessionId(cookies: any): string {
+export function getSessionId(cookies: any, forceNew: boolean = false): string {
   let sessionId = cookies.get('session_id');
 
-  if (!sessionId) {
+  if (!sessionId || forceNew) {
     sessionId = generateSessionId();
     cookies.set('session_id', sessionId, {
       path: '/',
@@ -36,5 +36,23 @@ export function setAuthenticated(cookies: any, value: boolean): void {
     });
   } else {
     cookies.delete('authenticated', { path: '/' });
+  }
+}
+
+export function isAdminAuthenticated(cookies: any): boolean {
+  return cookies.get('admin_authenticated') === 'true';
+}
+
+export function setAdminAuthenticated(cookies: any, value: boolean): void {
+  if (value) {
+    cookies.set('admin_authenticated', 'true', {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 // 24 hours
+    });
+  } else {
+    cookies.delete('admin_authenticated', { path: '/' });
   }
 }

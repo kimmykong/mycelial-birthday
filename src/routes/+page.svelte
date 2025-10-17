@@ -17,6 +17,7 @@
   let bonusRoundStart = $state(0);
   const isDone = $derived(submissionCount >= 5 + bonusRoundStart);
   let continueSubmitting = $state(false);
+  let isNewSession = $state(false);
 
   // Focus input when modal opens
   $effect(() => {
@@ -28,6 +29,7 @@
   function addMoreWords() {
     bonusRoundStart = submissionCount;
     continueSubmitting = true;
+    isNewSession = true;
   }
 
   // Reset continueSubmitting when they complete the bonus round
@@ -52,7 +54,7 @@
       const response = await fetch('/api/adjectives', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ word })
+        body: JSON.stringify({ word, newSession: isNewSession })
       });
 
       const result = await response.json();
@@ -60,6 +62,7 @@
       if (response.ok) {
         submissionCount = result.count;
         word = '';
+        isNewSession = false; // Reset after first submission in new session
         // Refresh adjectives
         const adjectivesResponse = await fetch('/api/adjectives');
         const newAdjectives = await adjectivesResponse.json();

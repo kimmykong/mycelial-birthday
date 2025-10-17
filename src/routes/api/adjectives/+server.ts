@@ -9,8 +9,8 @@ export const GET: RequestHandler = async () => {
 };
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
-  const sessionId = getSessionId(cookies);
-  const { word } = await request.json();
+  const { word, newSession } = await request.json();
+  const sessionId = getSessionId(cookies, newSession === true);
 
   // Validate word
   const trimmedWord = word?.trim();
