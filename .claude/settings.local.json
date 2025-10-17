@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss init:*)",
+      "Bash(./node_modules/.bin/tailwindcss:*)",
+      "Bash(test:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx vercel:*)",
+      "Bash(cat:*)",
+      "Read(//Users/kimphillip/**)",
+      "Bash(npm cache clean:*)",
+      "Bash(npm run build:*)",
+      "Bash(curl:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
