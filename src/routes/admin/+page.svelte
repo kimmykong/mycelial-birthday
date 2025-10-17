@@ -5,18 +5,6 @@
 
   let resetting = $state(false);
 
-  // Group submissions by session
-  const groupedSubmissions = $derived(() => {
-    const groups = new Map<string, typeof data.submissions>();
-    data.submissions.forEach(sub => {
-      if (!groups.has(sub.session_id)) {
-        groups.set(sub.session_id, []);
-      }
-      groups.get(sub.session_id)!.push(sub);
-    });
-    return Array.from(groups.entries());
-  });
-
   async function handleReset() {
     if (!confirm('Are you sure you want to reset the database? This will delete all submissions and cannot be undone.')) {
       return;
@@ -64,14 +52,15 @@
       </div>
 
       <p class="text-gray-600 mb-6">
-        Total sessions: {groupedSubmissions().length}
+        Total sessions: {data.sessions.length}
       </p>
 
       <div class="space-y-3">
-        {#each groupedSubmissions() as [sessionId, submissions]}
+        {#each data.sessions as session}
           <div class="bg-gray-50 rounded-lg p-4">
+            <p class="text-sm text-gray-500 mb-2 font-mono">Session: {session.sessionId}</p>
             <p class="text-gray-800">
-              {submissions.map(s => s.word).join(', ')}
+              {session.words.join(', ')}
             </p>
           </div>
         {/each}

@@ -1,5 +1,5 @@
 {
-  "name": "MycelialBirthday",
+  "name": "mycelial-birthday",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
@@ -14,7 +14,6 @@
     "@sveltejs/kit": "^2.43.8",
     "@tailwindcss/postcss": "^4.1.14",
     "@types/bcrypt": "^6.0.0",
-    "@types/better-sqlite3": "^7.6.13",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
     "svelte": "^5.39.8",
@@ -26,10 +25,7 @@
   "dependencies": {
     "@sveltejs/adapter-node": "^5.3.3",
     "@sveltejs/adapter-vercel": "^6.0.0",
-    "@vercel/kv": "^3.0.0",
     "bcrypt": "^6.0.0",
-    "better-sqlite3": "^12.4.1",
-    "ioredis": "^5.8.1",
-    "p5": "^2.0.5"
+    "ioredis": "^5.8.1"
   }
 }

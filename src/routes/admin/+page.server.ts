@@ -1,9 +1,9 @@
 import type { PageServerLoad } from './$types';
-import { getAllSubmissions } from '$lib/db';
+import { getAllSessions } from '$lib/db';
 
 export const load: PageServerLoad = async () => {
-  const submissions = await getAllSubmissions();
+  const sessions = await getAllSessions();
   return {
-    submissions
+    sessions
   };
 };

@@ -30,40 +30,24 @@ export interface Adjective {
   count: number;
 }
 
-export interface Submission {
-  id: string;
-  session_id: string;
-  word: string;
-  created_at: string;
-}
-
-// Keys:
+// New simplified schema:
+// session:<sessionId> -> JSON array of words ["kind", "funny", "smart"]
 // adjectives:<word> -> count (number)
 // adjectives:sorted -> sorted set of words by count
-// submissions:<sessionId> -> list of submission IDs
-// submission:<id> -> submission data
 
 export async function submitAdjective(sessionId: string, word: string): Promise<void> {
   const redis = getRedis();
   if (!redis) throw new Error('Redis not configured');
 
   const normalizedWord = word.toLowerCase().trim();
-  const submissionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  const timestamp = new Date().toISOString();
 
-  // Create submission record
-  const submission: Submission = {
-    id: submissionId,
-    session_id: sessionId,
-    word: normalizedWord,
-    created_at: timestamp
-  };
+  // Get current session words
+  const sessionData = await redis.get(`session:${sessionId}`);
+  const sessionWords: string[] = sessionData ? JSON.parse(sessionData) : [];
 
-  // Store submission as JSON string
-  await redis.set(`submission:${submissionId}`, JSON.stringify(submission));
-
-  // Add to session's submissions list
-  await redis.lpush(`submissions:${sessionId}`, submissionId);
+  // Add new word to session
+  sessionWords.push(normalizedWord);
+  await redis.set(`session:${sessionId}`, JSON.stringify(sessionWords));
 
   // Increment word count
   const newCount = await redis.incr(`adjectives:${normalizedWord}`);
@@ -99,35 +83,34 @@ export async function getSubmissionCount(sessionId: string): Promise<number> {
   const redis = getRedis();
   if (!redis) return 0;
 
-  const submissionIds = await redis.lrange(`submissions:${sessionId}`, 0, -1);
-  return submissionIds ? submissionIds.length : 0;
+  const sessionData = await redis.get(`session:${sessionId}`);
+  const sessionWords: string[] = sessionData ? JSON.parse(sessionData) : [];
+  return sessionWords.length;
 }
 
-export async function getAllSubmissions(): Promise<Submission[]> {
+export async function getAllSessions(): Promise<{ sessionId: string; words: string[] }[]> {
   const redis = getRedis();
   if (!redis) return [];
 
-  // Get all submission keys
-  const keys = await redis.keys('submission:*');
+  // Get all session keys
+  const keys = await redis.keys('session:*');
 
   if (!keys || keys.length === 0) {
     return [];
   }
 
-  // Fetch all submissions
-  const submissions: Submission[] = [];
+  // Fetch all sessions
+  const sessions: { sessionId: string; words: string[] }[] = [];
   for (const key of keys) {
     const data = await redis.get(key);
     if (data) {
-      const submission = JSON.parse(data);
-      submissions.push(submission);
+      const sessionId = key.replace('session:', '');
+      const words = JSON.parse(data);
+      sessions.push({ sessionId, words });
     }
   }
 
-  // Sort by created_at descending
-  submissions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-  return submissions;
+  return sessions;
 }
 
 export async function resetDatabase(): Promise<void> {
@@ -136,9 +119,9 @@ export async function resetDatabase(): Promise<void> {
 
   // Get all keys
   const adjectiveKeys = await redis.keys('adjectives:*');
-  const submissionKeys = await redis.keys('submission*');
+  const sessionKeys = await redis.keys('session:*');
 
-  const allKeys = [...(adjectiveKeys || []), ...(submissionKeys || [])];
+  const allKeys = [...(adjectiveKeys || []), ...(sessionKeys || [])];
 
   // Delete all keys
   if (allKeys.length > 0) {
