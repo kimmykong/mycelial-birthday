@@ -1,7 +1,28 @@
 import Redis from 'ioredis';
 
 // Initialize Redis client with connection string
-const redis = new Redis(process.env.REDIS_URL || '');
+let redis: Redis | null = null;
+
+function getRedis(): Redis | null {
+  const REDIS_URL = process.env.REDIS_URL;
+  if (!REDIS_URL) {
+    console.warn('REDIS_URL not found in environment variables');
+    return null;
+  }
+
+  if (!redis) {
+    console.log('Initializing Redis connection to:', REDIS_URL.substring(0, 20) + '...');
+    redis = new Redis(REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      retryStrategy: (times) => {
+        if (times > 3) return null; // Stop retrying
+        return Math.min(times * 50, 2000); // Exponential backoff
+      }
+    });
+  }
+
+  return redis;
+}
 
 export interface Adjective {
   word: string;
@@ -22,6 +43,9 @@ export interface Submission {
 // submission:<id> -> submission data
 
 export async function submitAdjective(sessionId: string, word: string): Promise<void> {
+  const redis = getRedis();
+  if (!redis) throw new Error('Redis not configured');
+
   const normalizedWord = word.toLowerCase().trim();
   const submissionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const timestamp = new Date().toISOString();
@@ -48,6 +72,9 @@ export async function submitAdjective(sessionId: string, word: string): Promise<
 }
 
 export async function getTopAdjectives(limit: number = 30): Promise<Adjective[]> {
+  const redis = getRedis();
+  if (!redis) return [];
+
   // Get top words from sorted set (highest scores first)
   const words = await redis.zrevrange('adjectives:sorted', 0, limit - 1);
 
@@ -68,11 +95,17 @@ export async function getTopAdjectives(limit: number = 30): Promise<Adjective[]>
 }
 
 export async function getSubmissionCount(sessionId: string): Promise<number> {
+  const redis = getRedis();
+  if (!redis) return 0;
+
   const submissionIds = await redis.lrange(`submissions:${sessionId}`, 0, -1);
   return submissionIds ? submissionIds.length : 0;
 }
 
 export async function getAllSubmissions(): Promise<Submission[]> {
+  const redis = getRedis();
+  if (!redis) return [];
+
   // Get all submission keys
   const keys = await redis.keys('submission:*');
 
@@ -97,6 +130,9 @@ export async function getAllSubmissions(): Promise<Submission[]> {
 }
 
 export async function resetDatabase(): Promise<void> {
+  const redis = getRedis();
+  if (!redis) throw new Error('Redis not configured');
+
   // Get all keys
   const adjectiveKeys = await redis.keys('adjectives:*');
   const submissionKeys = await redis.keys('submission*');

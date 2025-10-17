@@ -355,7 +355,9 @@
   });
 
   $effect(() => {
-    if (adjectives.length > 0 && containerWidth > 0) {
+    // Re-initialize whenever adjectives change or container is ready
+    if (containerWidth > 0) {
+      console.log('Adjectives changed, re-initializing word cloud with', adjectives.length, 'words');
       initializeWords();
     }
   });
