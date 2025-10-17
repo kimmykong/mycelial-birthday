@@ -11,6 +11,7 @@
   let submissionCount = $state(data.submissionCount);
   let adjectives = $state(data.adjectives);
   let modalOpen = $state(true);
+  let updateKey = $state(0);
 
   const isDone = $derived(submissionCount >= 5);
 
@@ -39,7 +40,10 @@
         word = '';
         // Refresh adjectives
         const adjectivesResponse = await fetch('/api/adjectives');
-        adjectives = await adjectivesResponse.json();
+        const newAdjectives = await adjectivesResponse.json();
+        console.log('Fetched new adjectives:', newAdjectives.length, 'words');
+        adjectives = newAdjectives;
+        updateKey++; // Force re-render
       } else {
         error = result.error || 'Failed to submit word';
       }
@@ -110,7 +114,9 @@
 
   <!-- Word Cloud -->
   <div class="absolute inset-0 w-full h-full">
-    <WordCloud {adjectives} />
+    {#key updateKey}
+      <WordCloud {adjectives} />
+    {/key}
   </div>
 
   <!-- Floating button to reopen modal (only show when modal is closed and not done) -->
