@@ -14,6 +14,8 @@
     x: number;
     y: number;
     color: string;
+    isCircle?: boolean; // For white mushroom dots
+    id?: string; // Unique identifier for keying
   }
 
   let words: Word[] = $state([]);
@@ -24,6 +26,11 @@
   let canvas: HTMLCanvasElement | null = null;
   let ctx: CanvasRenderingContext2D | null = null;
 
+  // Store mushroom bounds for color calculations
+  let mushroomScale = $state(1);
+  let mushroomOffsetX = $state(0);
+  let mushroomOffsetY = $state(0);
+
   function getSizeForRank(index: number, scaleFactor: number = 1): number {
     if (index < 5) return 80 * scaleFactor;
     if (index < 10) return 64 * scaleFactor;
@@ -33,39 +40,48 @@
     return 28 * scaleFactor;
   }
 
-  function getColorForPosition(y: number, offsetY: number, scale: number): string {
-    // Convert screen Y to SVG Y coordinate
+  function getColorForPosition(y: number, x: number, offsetY: number, offsetX: number, scale: number, letter: string = ''): string {
+    // Convert screen coordinates to SVG coordinates
     const svgY = (y - offsetY) / scale;
+    const svgX = (x - offsetX) / scale;
 
-    // Normalize Y position (30 = top of mushroom, 188 = bottom of stem)
-    const normalized = (svgY - 30) / (188 - 30);
-    const clamped = Math.max(0, Math.min(1, normalized));
+    // Determine if in cap (y <= 110) or stem (y > 110)
+    const isInCap = svgY <= 110;
 
-    // Rainbow gradient from top to bottom
-    const colors = [
-      { r: 255, g: 0, b: 0 },     // red
-      { r: 255, g: 127, b: 0 },   // orange
-      { r: 255, g: 255, b: 0 },   // yellow
-      { r: 0, g: 255, b: 0 },     // green
-      { r: 0, g: 0, b: 255 },     // blue
-      { r: 75, g: 0, b: 130 },    // indigo
-      { r: 148, g: 0, b: 211 },   // violet
-    ];
+    if (isInCap) {
+      // Cap: Vertical gradient from dark red at top to orange-yellow at very bottom
+      // Normalize Y position in cap (30 = top, 110 = bottom)
+      const normalizedY = (svgY - 30) / (110 - 30);
+      const clampedY = Math.max(0, Math.min(1, normalizedY));
 
-    // Determine which two colors to interpolate between
-    const segment = clamped * (colors.length - 1);
-    const index = Math.floor(segment);
-    const nextIndex = Math.min(index + 1, colors.length - 1);
-    const t = segment - index;
+      // Use exponential curve to keep red longer, only orange at very bottom
+      const curve = Math.pow(clampedY, 3); // Cubic curve keeps it red until near the end
 
-    const color1 = colors[index];
-    const color2 = colors[nextIndex];
+      // Dark red at top to orange-yellow at very bottom
+      const darkRed = { r: 139, g: 0, b: 0 };        // #8b0000 (dark red)
+      const orangeYellow = { r: 255, g: 200, b: 50 }; // #ffc832 (orange-yellow)
 
-    const r = Math.round(color1.r + (color2.r - color1.r) * t);
-    const g = Math.round(color1.g + (color2.g - color1.g) * t);
-    const b = Math.round(color1.b + (color2.b - color1.b) * t);
+      const r = Math.round(darkRed.r + (orangeYellow.r - darkRed.r) * curve);
+      const g = Math.round(darkRed.g + (orangeYellow.g - darkRed.g) * curve);
+      const b = Math.round(darkRed.b + (orangeYellow.b - darkRed.b) * curve);
 
-    return `rgb(${r}, ${g}, ${b})`;
+      return `rgb(${r}, ${g}, ${b})`;
+    } else {
+      // Stem: White colors with subtle gradient from left to right
+      // Normalize X position across stem width (78 to 122)
+      const normalizedX = (svgX - 78) / (122 - 78);
+      const clampedX = Math.max(0, Math.min(1, normalizedX));
+
+      // Off-white to pure white gradient
+      const offWhite = { r: 245, g: 242, b: 237 };   // #f5f2ed
+      const pureWhite = { r: 255, g: 255, b: 255 };  // #ffffff
+
+      const r = Math.round(offWhite.r + (pureWhite.r - offWhite.r) * clampedX);
+      const g = Math.round(offWhite.g + (pureWhite.g - offWhite.g) * clampedX);
+      const b = Math.round(offWhite.b + (pureWhite.b - offWhite.b) * clampedX);
+
+      return `rgb(${r}, ${g}, ${b})`;
+    }
   }
 
   function getMushroomBounds() {
@@ -81,7 +97,11 @@
     const scaledHeight = svgHeight * scale;
 
     const offsetX = (containerWidth - scaledWidth) / 2;
-    const offsetY = (containerHeight - scaledHeight) / 2;
+    // Position mushroom in upper portion with spacing from top, leaving room for modal at bottom
+    // Use 8% top margin, center in remaining upper 60% of space
+    const topMargin = containerHeight * 0.08;
+    const availableHeight = containerHeight * 0.6;
+    const offsetY = topMargin + (availableHeight - scaledHeight) / 2;
 
     console.log('Mushroom bounds:', { scale, offsetX, offsetY, scaledWidth, scaledHeight });
 
@@ -215,7 +235,7 @@
       const insideMushroom = isInsideMushroom(x, y, wordWidth, wordHeight);
       const spacingBetweenWords = 4 / scale; // 4px spacing between words
       if (insideMushroom && stemCurrentY + (wordHeight / scale) + spacingBetweenWords <= 188) {
-        const color = getColorForPosition(y, offsetY, scale);
+        const color = getColorForPosition(y, x, offsetY, offsetX, scale);
         const newWord = { text: adj.word, size, x, y, color };
         // Advance Y position for next word with spacing
         stemCurrentY += (wordHeight / scale) + spacingBetweenWords;
@@ -235,7 +255,7 @@
 
         const insideMushroom = isInsideMushroom(x, y, wordWidth, wordHeight);
         if (insideMushroom) {
-          const color = getColorForPosition(y, offsetY, scale);
+          const color = getColorForPosition(y, x, offsetY, offsetX, scale);
           const newWord = { text: adj.word, size, x, y, color };
           const overlaps = placedWords.some(existingWord => wordsOverlap(newWord, existingWord));
 
@@ -291,6 +311,11 @@
     }
 
     const { scale, offsetX, offsetY } = getMushroomBounds();
+
+    // Store bounds for template color calculations
+    mushroomScale = scale;
+    mushroomOffsetX = offsetX;
+    mushroomOffsetY = offsetY;
 
     // Start with larger scale for fewer words
     // Scale from 1.0 (30+ words) to 2.0 (1-5 words)
@@ -382,6 +407,68 @@
 
     if (!allPlaced) {
       console.error(`❌ Could not place all words even at scale factor ${scaleFactor}`);
+    }
+
+    // Add white circle dots to the mushroom cap (only if we have some words)
+    if (placedWords.length > 0) {
+      console.log('Attempting to place white circle dots...');
+
+      // Find the highest word (minimum Y position)
+      const highestWordY = Math.min(...placedWords.map(w => w.y - getTextHeight(w.text, w.size) / 2));
+      console.log(`Highest word top Y: ${Math.round(highestWordY)}, dots will be placed below this`);
+
+      const maxDotsToPlace = 10;
+      const minDotDistance = 30; // Minimum distance between dots in pixels
+      let dotsPlaced = 0;
+      const placedDots: Word[] = [];
+
+      for (let i = 0; i < maxDotsToPlace; i++) {
+        const dot = tryPlaceWord(
+          { word: `●${i}`, count: 1 }, // Circle character with unique identifier
+          999 + i, // High index for small size
+          scaleFactor,
+          placedWords,
+          'cap', // Only place in cap
+          scale,
+          offsetX,
+          offsetY
+        );
+
+        if (dot) {
+          const dotTop = dot.y - getTextHeight(dot.text, dot.size) / 2;
+
+          // Check if dot is below the highest word
+          if (dotTop < highestWordY) {
+            console.log(`✗ Dot ${i + 1} above highest word (${Math.round(dotTop)} < ${Math.round(highestWordY)}), skipping`);
+            continue;
+          }
+
+          // Check if this dot is too close to other dots
+          const tooClose = placedDots.some(existingDot => {
+            const dx = dot.x - existingDot.x;
+            const dy = dot.y - existingDot.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance < minDotDistance;
+          });
+
+          if (!tooClose) {
+            dot.isCircle = true;
+            dot.id = `dot-${i}`; // Unique ID for this dot
+            dot.text = '●'; // Override text to just show the circle without the number
+            dot.color = 'rgba(255, 255, 255, 0.95)'; // White with slight transparency
+            dot.size = 24; // Medium size dots
+            placedWords.push(dot);
+            placedDots.push(dot);
+            dotsPlaced++;
+            console.log(`✓ Placed dot ${dotsPlaced} at (${Math.round(dot.x)}, ${Math.round(dot.y)})`);
+          } else {
+            console.log(`✗ Dot ${i + 1} too close to existing dot, skipping`);
+          }
+        } else {
+          console.log(`✗ Could not place dot ${i + 1}`);
+        }
+      }
+      console.log(`Total dots placed: ${dotsPlaced}/${maxDotsToPlace}`);
     }
 
     words = placedWords;
@@ -490,7 +577,7 @@
   {/if}
 
   <!-- Words -->
-  {#each words as word (word.text)}
+  {#each words as word (word.id || word.text)}
     {@const wordWidth = getTextWidth(word.text, word.size)}
     {@const wordHeight = getTextHeight(word.text, word.size)}
 

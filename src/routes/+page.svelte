@@ -102,54 +102,7 @@
   }
 </script>
 
-<div class="min-h-screen h-screen relative overflow-hidden bg-gradient-to-b from-[#0a1f0a] via-[#1a3a1a] to-[#2d4a1a]">
-  <!-- Forest Background Layers -->
-  <div class="absolute inset-0 w-full h-full">
-    <!-- Far trees (darkest) -->
-    <div class="absolute inset-0 opacity-20">
-      <svg class="w-full h-full" preserveAspectRatio="none">
-        <defs>
-          <pattern id="trees-far" x="0" y="0" width="200" height="100" patternUnits="userSpaceOnUse">
-            <polygon points="20,100 30,60 40,100" fill="#0a1f0a" opacity="0.6"/>
-            <polygon points="60,100 75,40 90,100" fill="#0a1f0a" opacity="0.5"/>
-            <polygon points="120,100 135,50 150,100" fill="#0a1f0a" opacity="0.7"/>
-            <polygon points="170,100 180,70 190,100" fill="#0a1f0a" opacity="0.5"/>
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#trees-far)"/>
-      </svg>
-    </div>
-
-    <!-- Mid trees -->
-    <div class="absolute inset-0 opacity-30">
-      <svg class="w-full h-full" preserveAspectRatio="none">
-        <defs>
-          <pattern id="trees-mid" x="0" y="0" width="250" height="100" patternUnits="userSpaceOnUse">
-            <polygon points="40,100 55,50 70,100" fill="#1a3a1a" opacity="0.7"/>
-            <polygon points="100,100 120,35 140,100" fill="#1a3a1a" opacity="0.8"/>
-            <polygon points="180,100 200,45 220,100" fill="#1a3a1a" opacity="0.6"/>
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#trees-mid)"/>
-      </svg>
-    </div>
-
-    <!-- Near trees (sides) -->
-    <div class="absolute inset-0 opacity-40">
-      <svg class="w-full h-full" preserveAspectRatio="none">
-        <!-- Left side tree -->
-        <polygon points="0,800 80,200 160,800" fill="#2d5016" opacity="0.5"/>
-        <polygon points="-50,800 50,300 150,800" fill="#1a3a1a" opacity="0.6"/>
-
-        <!-- Right side tree -->
-        <polygon points="1800,800 1720,200 1640,800" fill="#2d5016" opacity="0.5"/>
-        <polygon points="1850,800 1750,300 1650,800" fill="#1a3a1a" opacity="0.6"/>
-      </svg>
-    </div>
-
-    <!-- Ground fog/mist effect -->
-    <div class="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[#0a1f0a]/40 to-transparent"></div>
-  </div>
+<div class="min-h-screen h-screen relative overflow-hidden" style="background: linear-gradient(to bottom right, #f5e6d3, #e8d4b8, #d4c4a8);">
 
   <!-- Word Cloud -->
   <div class="absolute inset-0 w-full h-full">
@@ -162,7 +115,7 @@
   {#if !modalOpen && !isDone}
     <button
       onclick={openModal}
-      class="fixed bottom-8 right-8 z-20 bg-[#3d6b1f] text-white px-6 py-3 rounded-full shadow-lg hover:bg-[#4a7c2c] transition-all hover:scale-105"
+      class="fixed bottom-8 right-8 z-20 text-white px-5 py-3 rounded-xl shadow-lg transition-all duration-200 font-medium text-sm" style="background: #5d4e37; box-shadow: 0 10px 25px rgba(93, 78, 55, 0.3);"
     >
       Submit Adjectives ({submissionCount}/5)
     </button>
@@ -170,91 +123,101 @@
 
   <!-- Modal -->
   {#if modalOpen}
-    <div class="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl px-6 pb-8" style="bottom: 0 !important; max-width: min(576px, calc(100vw - 48px));">
-      <!-- Modal Content - Translucent with backdrop blur -->
-      <div class="relative bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.3)] border border-white/20">
+    <div class="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl px-4 pb-6 sm:px-6" style="bottom: 0 !important;">
+      <!-- Modal Content -->
+      <div class="relative rounded-2xl border" style="background: #faf7f2; box-shadow: 0 -4px 24px rgba(93, 78, 55, 0.15); border-color: rgba(139, 115, 85, 0.2);">
         <!-- Close button -->
         {#if !isDone || continueSubmitting}
           <button
             onclick={closeModal}
-            class="absolute text-gray-600 hover:text-gray-900 bg-white hover:bg-gray-100 rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-lg border border-gray-300 z-10"
-            style="top: 16px; right: 16px; width: 48px; height: 48px; min-width: 48px; min-height: 48px;"
+            class="absolute top-4 right-4 rounded-lg p-2 transition-all duration-200" style="color: #8b7355; background: transparent;" onmouseover={(e) => e.currentTarget.style.background='rgba(139, 115, 85, 0.1)'} onmouseout={(e) => e.currentTarget.style.background='transparent'}
             aria-label="Close"
           >
-            <svg style="width: 28px; height: 28px;" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         {/if}
 
         {#if !isDone || continueSubmitting}
-          <div class="px-10 sm:px-16 pt-14 pb-12 text-center">
+          <div class="px-6 py-5 sm:px-8 sm:py-6">
             <!-- Question -->
-            <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4 leading-tight" style="font-family: 'Inter', -apple-system, sans-serif; background: linear-gradient(to right, #9333ea, #ec4899, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+            <h1 class="text-lg sm:text-xl font-semibold mb-1 leading-tight tracking-tight" style="color: #3d2817;">
               What are your top 5 adjectives that describe Kim?
             </h1>
+            <p class="text-xs sm:text-sm mb-4" style="color: #6b5744;">Share the words that come to mind</p>
 
             <!-- Progress -->
-            <div class="flex justify-center items-center gap-3 mb-8 mt-6" style="min-height: 20px;">
+            <div class="flex items-center gap-2 mb-4">
               {#each Array(5) as _, i}
                 {@const currentProgress = submissionCount - bonusRoundStart}
-                <div
-                  class="rounded-full transition-all duration-300 {i < currentProgress ? 'bg-gradient-to-r from-purple-500 to-pink-500 shadow-md' : 'bg-gray-400'}"
-                  style="width: 12px; height: 12px; min-width: 12px; min-height: 12px;"
-                ></div>
+                <div class="h-1.5 flex-1 rounded-full overflow-hidden" style="background: rgba(139, 115, 85, 0.15);">
+                  <div
+                    class="h-full transition-all duration-500 ease-out"
+                    style="width: {i < currentProgress ? '100%' : '0%'}; background: linear-gradient(to right, #8b6914, #a0782b);"
+                  ></div>
+                </div>
               {/each}
             </div>
 
-            <form onsubmit={handleSubmit} class="space-y-5 flex flex-col items-center">
+            <form onsubmit={handleSubmit} class="space-y-3">
               <!-- Input Field -->
               <input
                 bind:this={inputElement}
                 type="text"
                 bind:value={word}
                 disabled={loading}
-                class="px-6 py-4 bg-gradient-to-br from-white/90 to-white/70 border-2 border-purple-200/60 text-gray-900 text-lg rounded-full focus:from-white focus:to-white/95 focus:border-purple-400 focus:ring-4 focus:ring-purple-100/50 outline-none placeholder-gray-400 transition-all duration-300 backdrop-blur-sm"
-                placeholder="Type an adjective..."
+                class="w-full px-4 py-2.5 text-base rounded-xl outline-none transition-all duration-200"
+                style="background: #ffffff; border: 1px solid rgba(139, 115, 85, 0.25); color: #3d2817;"
+                onfocus={(e) => { e.currentTarget.style.borderColor='#8b6914'; e.currentTarget.style.boxShadow='0 0 0 4px rgba(139, 105, 20, 0.1)'; }}
+                onblur={(e) => { e.currentTarget.style.borderColor='rgba(139, 115, 85, 0.25)'; e.currentTarget.style.boxShadow='none'; }}
+                placeholder="Enter an adjective"
                 maxlength="50"
                 required
-                style="font-family: 'Inter', -apple-system, sans-serif; width: 320px; max-width: 90vw; box-shadow: 0 8px 32px rgba(147, 51, 234, 0.12), 0 4px 16px rgba(236, 72, 153, 0.08);"
               />
 
               {#if error}
-                <p class="text-red-500 text-sm font-medium">{error}</p>
+                <p class="text-red-600 text-sm font-medium">{error}</p>
               {/if}
 
-              <!-- Submit Button - Rainbow gradient -->
+              <!-- Submit Button -->
               <button
                 type="submit"
                 disabled={loading}
-                class="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 hover:from-orange-600 hover:via-pink-600 hover:to-purple-700 text-white py-4 px-8 rounded-full font-bold text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.03] hover:brightness-110"
-                style="font-family: 'Inter', -apple-system, sans-serif; width: 320px; max-width: 90vw; box-shadow: 0 12px 40px rgba(147, 51, 234, 0.3), 0 6px 20px rgba(236, 72, 153, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;"
+                class="w-full text-white py-2.5 rounded-xl font-medium text-base transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                style="background: #5d4e37; box-shadow: 0 2px 8px rgba(93, 78, 55, 0.2);"
+                onmouseover={(e) => { if(!e.currentTarget.disabled) e.currentTarget.style.background='#6d5e47'; }}
+                onmouseout={(e) => { if(!e.currentTarget.disabled) e.currentTarget.style.background='#5d4e37'; }}
               >
                 {loading ? 'Submitting...' : 'Submit'}
               </button>
             </form>
           </div>
         {:else}
-          <div class="text-center px-10 py-14">
-            <div class="text-6xl mb-6">✨</div>
-            <h2 class="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-5" style="font-family: 'Inter', -apple-system, sans-serif;">
-              Thank you!
-            </h2>
-            <p class="text-xl text-gray-700 mb-10" style="font-family: 'Inter', -apple-system, sans-serif;">
-              You've submitted 5 adjectives. Want to add more?
-            </p>
-            <div class="flex gap-4 justify-center flex-wrap">
+          <div class="text-center px-10 py-12">
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style="background: linear-gradient(to bottom right, #8b6914, #a0782b);">
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 class="text-2xl font-semibold mb-2" style="color: #3d2817;">Thank you!</h2>
+            <p class="text-sm mb-8" style="color: #6b5744;">You've submitted 5 adjectives. Want to add more?</p>
+            <div class="flex gap-3 justify-center">
               <button
                 onclick={addMoreWords}
-                class="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 hover:from-orange-600 hover:via-pink-600 hover:to-purple-700 text-white py-4 px-8 rounded-full font-bold text-lg transition-all duration-300 hover:scale-[1.03] hover:brightness-110"
-                style="font-family: 'Inter', -apple-system, sans-serif; box-shadow: 0 12px 40px rgba(147, 51, 234, 0.3), 0 6px 20px rgba(236, 72, 153, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;"
+                class="text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200"
+                style="background: #5d4e37; box-shadow: 0 2px 8px rgba(93, 78, 55, 0.2);"
+                onmouseover={(e) => e.currentTarget.style.background='#6d5e47'}
+                onmouseout={(e) => e.currentTarget.style.background='#5d4e37'}
               >
                 Add More
               </button>
               <button
                 onclick={closeModal}
-                class="bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 py-4 px-8 rounded-full font-bold text-lg transition-all duration-300 hover:scale-[1.03] border-2 border-gray-300"
-                style="font-family: 'Inter', -apple-system, sans-serif; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.08);"
+                class="px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200"
+                style="background: rgba(139, 115, 85, 0.1); color: #5d4e37;"
+                onmouseover={(e) => e.currentTarget.style.background='rgba(139, 115, 85, 0.2)'}
+                onmouseout={(e) => e.currentTarget.style.background='rgba(139, 115, 85, 0.1)'}
               >
                 Close
               </button>
