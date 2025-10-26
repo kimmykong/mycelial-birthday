@@ -16,7 +16,9 @@
       "Bash(git checkout:*)",
       "Bash(lsof:*)",
       "Bash(xargs kill:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx svelte-kit:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,4 +1,8 @@
 <script lang="ts">
+  import type { PageData } from './$types';
+
+  let { data }: { data: PageData } = $props();
+
   let password = '';
   let error = '';
   let loading = false;
@@ -30,20 +34,19 @@
 
 <div class="min-h-screen h-screen flex items-center justify-center overflow-hidden" style="background: linear-gradient(to bottom right, #f5e6d3, #e8d4b8, #d4c4a8);">
   <!-- Login Modal -->
-  <div class="w-full max-w-md px-4">
+  <div class="w-full max-w-lg px-4">
     <div class="relative rounded-2xl border p-8 sm:p-10" style="background: #faf7f2; box-shadow: 0 10px 40px rgba(93, 78, 55, 0.15); border-color: rgba(139, 115, 85, 0.2);">
       <div class="text-center mb-8">
         <h1 class="text-3xl font-semibold mb-2 tracking-tight" style="color: #3d2817;">
-          Welcome
+          Welcome to Kim's birthday!
         </h1>
-        <p class="text-sm" style="color: #6b5744;">Enter your password to continue</p>
       </div>
 
       <form onsubmit={handleSubmit} class="space-y-4">
         <!-- Input Field -->
         <div>
           <label for="password" class="block text-sm font-medium mb-2" style="color: #5d4e37;">
-            Password
+            {data.loginQuestion}
           </label>
           <input
             id="password"
@@ -54,7 +57,7 @@
             style="background: #ffffff; border: 1px solid rgba(139, 115, 85, 0.25); color: #3d2817;"
             onfocus={(e) => { e.currentTarget.style.borderColor='#8b6914'; e.currentTarget.style.boxShadow='0 0 0 4px rgba(139, 105, 20, 0.1)'; }}
             onblur={(e) => { e.currentTarget.style.borderColor='rgba(139, 115, 85, 0.25)'; e.currentTarget.style.boxShadow='none'; }}
-            placeholder="Enter password"
+            placeholder={data.loginPlaceholder}
             required
           />
         </div>

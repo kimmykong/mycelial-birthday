@@ -44,7 +44,7 @@
     return 28 * scaleFactor;
   }
 
-  function getColorForPosition(y: number, x: number, offsetY: number, offsetX: number, scale: number, letter: string = ''): string {
+  function getColorForPosition(y: number, x: number, offsetY: number, offsetX: number, scale: number): string {
     // Convert screen coordinates to SVG coordinates
     const svgY = (y - offsetY) / scale;
     const svgX = (x - offsetX) / scale;
@@ -477,6 +477,13 @@
       }
     };
 
+    // Debounce resize events to avoid excessive recalculations
+    let resizeTimeout: number;
+    const debouncedUpdateSize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = window.setTimeout(updateSize, 150);
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         e.preventDefault();
@@ -486,11 +493,12 @@
 
     // Wait for next tick to ensure container is rendered
     setTimeout(updateSize, 0);
-    window.addEventListener('resize', updateSize);
+    window.addEventListener('resize', debouncedUpdateSize);
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      window.removeEventListener('resize', updateSize);
+      clearTimeout(resizeTimeout);
+      window.removeEventListener('resize', debouncedUpdateSize);
       window.removeEventListener('keydown', handleKeyDown);
     };
   });

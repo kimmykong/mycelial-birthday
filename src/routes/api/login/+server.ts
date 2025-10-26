@@ -12,5 +12,5 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
     return json({ success: true });
   }
 
-  return json({ error: 'Invalid password' }, { status: 401 });
+  return json({ error: ':( try again. I believe in you <3' }, { status: 401 });
 };

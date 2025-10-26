@@ -145,8 +145,6 @@
             <h1 class="text-lg sm:text-xl font-semibold mb-1 leading-tight tracking-tight" style="color: #3d2817;">
               What are your top 5 adjectives that describe Kim?
             </h1>
-            <p class="text-xs sm:text-sm mb-4" style="color: #6b5744;">Share the words that come to mind</p>
-
             <!-- Progress -->
             <div class="flex items-center gap-2 mb-4">
               {#each Array(5) as _, i}
@@ -172,7 +170,7 @@
                 onfocus={(e) => { e.currentTarget.style.borderColor='#8b6914'; e.currentTarget.style.boxShadow='0 0 0 4px rgba(139, 105, 20, 0.1)'; }}
                 onblur={(e) => { e.currentTarget.style.borderColor='rgba(139, 115, 85, 0.25)'; e.currentTarget.style.boxShadow='none'; }}
                 placeholder="Enter an adjective"
-                maxlength="50"
+                maxLength={50}
                 required
               />
 
