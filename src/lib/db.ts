@@ -4,7 +4,7 @@ import { env } from '$env/dynamic/private';
 // Initialize Redis client with connection string
 let redis: Redis | null = null;
 
-function getRedis(): Redis | null {
+export function getRedis(): Redis | null {
   const REDIS_URL = env.REDIS_URL;
   if (!REDIS_URL) {
     console.warn('REDIS_URL not found in environment variables');
