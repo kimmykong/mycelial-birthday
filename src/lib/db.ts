@@ -113,6 +113,36 @@ export async function getAllSessions(): Promise<{ sessionId: string; words: stri
   return sessions;
 }
 
+export async function deleteSession(sessionId: string): Promise<void> {
+  const redis = getRedis();
+  if (!redis) throw new Error('Redis not configured');
+
+  // Get session words before deletion
+  const sessionData = await redis.get(`session:${sessionId}`);
+  if (!sessionData) {
+    return; // Session doesn't exist
+  }
+
+  const sessionWords: string[] = JSON.parse(sessionData);
+
+  // Decrement counts for each word and update sorted set
+  for (const word of sessionWords) {
+    const newCount = await redis.decr(`adjectives:${word}`);
+
+    if (newCount <= 0) {
+      // Remove word completely if count is 0 or less
+      await redis.del(`adjectives:${word}`);
+      await redis.zrem('adjectives:sorted', word);
+    } else {
+      // Update sorted set with new count
+      await redis.zadd('adjectives:sorted', newCount, word);
+    }
+  }
+
+  // Delete session
+  await redis.del(`session:${sessionId}`);
+}
+
 export async function resetDatabase(): Promise<void> {
   const redis = getRedis();
   if (!redis) throw new Error('Redis not configured');

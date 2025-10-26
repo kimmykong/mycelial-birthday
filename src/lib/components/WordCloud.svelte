@@ -31,6 +31,10 @@
   let mushroomOffsetX = $state(0);
   let mushroomOffsetY = $state(0);
 
+  // Cache for text measurements to avoid repeated canvas operations
+  const textWidthCache = new Map<string, number>();
+  const textHeightCache = new Map<string, number>();
+
   function getSizeForRank(index: number, scaleFactor: number = 1): number {
     if (index < 5) return 80 * scaleFactor;
     if (index < 10) return 64 * scaleFactor;
@@ -103,8 +107,6 @@
     const availableHeight = containerHeight * 0.6;
     const offsetY = topMargin + (availableHeight - scaledHeight) / 2;
 
-    console.log('Mushroom bounds:', { scale, offsetX, offsetY, scaledWidth, scaledHeight });
-
     return { scale, offsetX, offsetY };
   }
 
@@ -148,6 +150,11 @@
   }
 
   function getTextWidth(text: string, fontSize: number): number {
+    // Check cache first
+    const cacheKey = `${text}-${fontSize}`;
+    const cached = textWidthCache.get(cacheKey);
+    if (cached !== undefined) return cached;
+
     // Use canvas to measure actual text width
     if (!ctx) {
       if (!canvas) {
@@ -156,16 +163,26 @@
       ctx = canvas.getContext('2d');
     }
 
+    let width: number;
     if (ctx) {
       ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-      return ctx.measureText(text).width;
+      width = ctx.measureText(text).width;
+    } else {
+      // Fallback estimation if canvas not available
+      width = text.length * fontSize * 0.55;
     }
 
-    // Fallback estimation if canvas not available
-    return text.length * fontSize * 0.55;
+    // Cache the result
+    textWidthCache.set(cacheKey, width);
+    return width;
   }
 
   function getTextHeight(text: string, fontSize: number): number {
+    // Check cache first
+    const cacheKey = `${text}-${fontSize}`;
+    const cached = textHeightCache.get(cacheKey);
+    if (cached !== undefined) return cached;
+
     // Use canvas to measure actual text height
     if (!ctx) {
       if (!canvas) {
@@ -174,6 +191,7 @@
       ctx = canvas.getContext('2d');
     }
 
+    let height: number;
     if (ctx) {
       ctx.font = `bold ${fontSize}px Arial, sans-serif`;
       const metrics = ctx.measureText(text);
@@ -181,11 +199,15 @@
       const ascent = metrics.actualBoundingBoxAscent || fontSize * 0.8;
       const descent = metrics.actualBoundingBoxDescent || fontSize * 0.2;
       // Add asymmetric padding: 10% on ascent, 30% on descent (descenders need more space)
-      return ascent * 1.1 + descent * 1.3;
+      height = ascent * 1.1 + descent * 1.3;
+    } else {
+      // Fallback estimation if canvas not available
+      height = fontSize * 1.2;
     }
 
-    // Fallback estimation if canvas not available
-    return fontSize * 1.2;
+    // Cache the result
+    textHeightCache.set(cacheKey, height);
+    return height;
   }
 
   function wordsOverlap(word1: Word, word2: Word): boolean {
@@ -270,12 +292,8 @@
   }
 
   function initializeWords() {
-    console.log('initializeWords called with', adjectives.length, 'adjectives');
-    console.log('Container dimensions:', containerWidth, containerHeight);
-
     let wordsToDisplay = adjectives;
     if (adjectives.length === 0) {
-      console.log('Using placeholder data');
       wordsToDisplay = [
         { word: 'creative', count: 30 },
         { word: 'kind', count: 28 },
@@ -339,7 +357,6 @@
     while (!allPlaced && scaleFactor >= 0.3) {
       placedWords = [];
       stemCurrentY = 115; // Reset stem Y position for each attempt
-      console.log(`Attempting placement with scale factor: ${scaleFactor}`);
 
       // Separate words by length
       const longWords = wordsToDisplay.filter(adj => adj.word.length > 6);
@@ -353,10 +370,8 @@
 
         if (word) {
           placedWords.push(word);
-          console.log(`✓ Placed long word "${adj.word}" in cap`);
         } else {
           unplacedWords.push(adj);
-          console.log(`✗ Could not place long word "${adj.word}" in cap, will retry`);
         }
       }
 
@@ -367,10 +382,8 @@
 
         if (word) {
           placedWords.push(word);
-          console.log(`✓ Placed short word "${adj.word}" in stem`);
         } else {
           unplacedWords.push(adj);
-          console.log(`✗ Could not place short word "${adj.word}" in stem, will retry in cap`);
         }
       }
 
@@ -382,40 +395,28 @@
 
         if (word) {
           placedWords.push(word);
-          console.log(`✓ Placed overflow word "${adj.word}" in cap`);
         } else {
           stillUnplaced.push(adj);
-          console.warn(`✗ Still could not place "${adj.word}"`);
         }
       }
 
       // Check if all words were placed
       if (placedWords.length === wordsToDisplay.length) {
         allPlaced = true;
-        console.log(`✅ All ${wordsToDisplay.length} words placed with scale factor ${scaleFactor}`);
       } else {
-        console.log(`⚠ Only placed ${placedWords.length}/${wordsToDisplay.length} words, reducing scale to ${(scaleFactor - 0.05).toFixed(2)}`);
         scaleFactor -= 0.05; // Smaller decrements for finer control
 
         // If we've tried enough and have most words placed, accept it
         if (scaleFactor < 0.3 && placedWords.length >= wordsToDisplay.length * 0.7) {
-          console.log(`⚠ Accepting ${placedWords.length}/${wordsToDisplay.length} words (70% threshold met)`);
           allPlaced = true;
         }
       }
     }
 
-    if (!allPlaced) {
-      console.error(`❌ Could not place all words even at scale factor ${scaleFactor}`);
-    }
-
     // Add white circle dots to the mushroom cap (only if we have some words)
     if (placedWords.length > 0) {
-      console.log('Attempting to place white circle dots...');
-
       // Find the highest word (minimum Y position)
       const highestWordY = Math.min(...placedWords.map(w => w.y - getTextHeight(w.text, w.size) / 2));
-      console.log(`Highest word top Y: ${Math.round(highestWordY)}, dots will be placed below this`);
 
       const maxDotsToPlace = 10;
       const minDotDistance = 30; // Minimum distance between dots in pixels
@@ -439,7 +440,6 @@
 
           // Check if dot is below the highest word
           if (dotTop < highestWordY) {
-            console.log(`✗ Dot ${i + 1} above highest word (${Math.round(dotTop)} < ${Math.round(highestWordY)}), skipping`);
             continue;
           }
 
@@ -460,15 +460,9 @@
             placedWords.push(dot);
             placedDots.push(dot);
             dotsPlaced++;
-            console.log(`✓ Placed dot ${dotsPlaced} at (${Math.round(dot.x)}, ${Math.round(dot.y)})`);
-          } else {
-            console.log(`✗ Dot ${i + 1} too close to existing dot, skipping`);
           }
-        } else {
-          console.log(`✗ Could not place dot ${i + 1}`);
         }
       }
-      console.log(`Total dots placed: ${dotsPlaced}/${maxDotsToPlace}`);
     }
 
     words = placedWords;
@@ -478,7 +472,6 @@
     const updateSize = () => {
       containerWidth = container.clientWidth;
       containerHeight = container.clientHeight;
-      console.log('Container size:', containerWidth, containerHeight);
       if (containerWidth > 0 && containerHeight > 0) {
         initializeWords();
       }
@@ -505,7 +498,6 @@
   $effect(() => {
     // Re-initialize whenever adjectives change or container is ready
     if (containerWidth > 0) {
-      console.log('Adjectives changed, re-initializing word cloud with', adjectives.length, 'words');
       initializeWords();
     }
   });
