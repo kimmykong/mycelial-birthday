@@ -3,9 +3,9 @@
 
   let { data }: { data: PageData } = $props();
 
-  let password = '';
-  let error = '';
-  let loading = false;
+  let password = $state('');
+  let error = $state('');
+  let loading = $state(false);
 
   async function handleSubmit() {
     loading = true;

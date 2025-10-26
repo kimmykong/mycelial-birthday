@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { setAdminAuthenticated } from '$lib/session';
 import { ADMIN_PASSWORD } from '$env/static/private';
-import { isRateLimited } from '$lib/rateLimit';
+import { isRateLimited } from '$lib/rateLimit.ts';
 
 export const POST: RequestHandler = async ({ request, cookies, getClientAddress }) => {
   const { password } = await request.json();

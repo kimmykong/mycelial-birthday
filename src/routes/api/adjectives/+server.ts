@@ -3,8 +3,8 @@ import type { RequestHandler } from './$types';
 import { submitAdjective, getTopAdjectives, getSubmissionCount } from '$lib/db';
 import { getSessionId } from '$lib/session';
 import { env } from '$env/dynamic/private';
-import { isRateLimited } from '$lib/rateLimit';
-import { sanitizeAdjective } from '$lib/sanitize';
+import { isRateLimited } from '$lib/rateLimit.ts';
+import { sanitizeAdjective } from '$lib/sanitize.ts';
 
 export const GET: RequestHandler = async () => {
   const adjectives = await getTopAdjectives(30);

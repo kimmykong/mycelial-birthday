@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { setAuthenticated } from '$lib/session';
-import { isRateLimited } from '$lib/rateLimit';
+import { isRateLimited } from '$lib/rateLimit.ts';
 
 const PASSWORD = process.env.PASSWORD || 'changeme';
 
