@@ -18,6 +18,16 @@
   let continueSubmitting = $state(false);
   let isNewSession = $state(false);
 
+  // Check if submissions are allowed (from now until the configured end date)
+  const isSubmissionAllowed = $derived(() => {
+    if (!data.submissionEndDate) {
+      // If no end date configured, allow submissions
+      return true;
+    }
+    const now = new Date();
+    return now.getTime() <= data.submissionEndDate;
+  });
+
   // Focus input when modal opens
   $effect(() => {
     if (modalOpen && (!isDone || continueSubmitting) && inputElement) {
@@ -111,8 +121,8 @@
     {/key}
   </div>
 
-  <!-- Floating button to reopen modal (only show when modal is closed and not done) -->
-  {#if !modalOpen && !isDone}
+  <!-- Floating button to reopen modal (only show when modal is closed and not done and submissions allowed) -->
+  {#if !modalOpen && !isDone && isSubmissionAllowed()}
     <button
       onclick={openModal}
       class="fixed bottom-8 right-8 z-20 text-white px-5 py-3 rounded-xl shadow-lg transition-all duration-200 font-medium text-sm" style="background: #5d4e37; box-shadow: 0 10px 25px rgba(93, 78, 55, 0.3);"
@@ -121,8 +131,8 @@
     </button>
   {/if}
 
-  <!-- Modal -->
-  {#if modalOpen}
+  <!-- Modal - only show if submissions are allowed -->
+  {#if modalOpen && isSubmissionAllowed()}
     <div class="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl px-4 pb-6 sm:px-6" style="bottom: 0 !important;">
       <!-- Modal Content -->
       <div class="relative rounded-2xl border" style="background: #faf7f2; box-shadow: 0 -4px 24px rgba(93, 78, 55, 0.15); border-color: rgba(139, 115, 85, 0.2);">
@@ -140,13 +150,13 @@
         {/if}
 
         {#if !isDone || continueSubmitting}
-          <div class="px-6 py-5 sm:px-8 sm:py-6">
+          <div class="px-5 py-4 sm:px-6 sm:py-5">
             <!-- Question -->
-            <h1 class="text-lg sm:text-xl font-semibold mb-1 leading-tight tracking-tight" style="color: #3d2817;">
+            <h1 class="text-base sm:text-lg font-semibold mb-1 leading-tight tracking-tight" style="color: #3d2817;">
               What are your top 5 adjectives that describe Kim?
             </h1>
             <!-- Progress -->
-            <div class="flex items-center gap-2 mb-4">
+            <div class="flex items-center gap-2 mb-3">
               {#each Array(5) as _, i}
                 {@const currentProgress = submissionCount - bonusRoundStart}
                 <div class="h-1.5 flex-1 rounded-full overflow-hidden" style="background: rgba(139, 115, 85, 0.15);">
@@ -158,14 +168,14 @@
               {/each}
             </div>
 
-            <form onsubmit={handleSubmit} class="space-y-3">
+            <form onsubmit={handleSubmit} class="space-y-2.5">
               <!-- Input Field -->
               <input
                 bind:this={inputElement}
                 type="text"
                 bind:value={word}
                 disabled={loading}
-                class="w-full px-4 py-2.5 text-base rounded-xl outline-none transition-all duration-200"
+                class="w-full px-3 py-2 text-base rounded-xl outline-none transition-all duration-200"
                 style="background: #ffffff; border: 1px solid rgba(139, 115, 85, 0.25); color: #3d2817;"
                 onfocus={(e) => { e.currentTarget.style.borderColor='#8b6914'; e.currentTarget.style.boxShadow='0 0 0 4px rgba(139, 105, 20, 0.1)'; }}
                 onblur={(e) => { e.currentTarget.style.borderColor='rgba(139, 115, 85, 0.25)'; e.currentTarget.style.boxShadow='none'; }}
@@ -182,7 +192,7 @@
               <button
                 type="submit"
                 disabled={loading}
-                class="w-full text-white py-2.5 rounded-xl font-medium text-base transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full text-white py-2 rounded-xl font-medium text-base transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 style="background: #5d4e37; box-shadow: 0 2px 8px rgba(93, 78, 55, 0.2);"
                 onmouseover={(e) => { if(!e.currentTarget.disabled) e.currentTarget.style.background='#6d5e47'; }}
                 onmouseout={(e) => { if(!e.currentTarget.disabled) e.currentTarget.style.background='#5d4e37'; }}

@@ -92,9 +92,9 @@
     const svgWidth = 200;
     const svgHeight = 220;
 
-    // Calculate the scale to match the SVG sizing - larger now to fit all words
-    const maxWidth = Math.min(containerWidth * 0.95, 1200);
-    const maxHeight = containerHeight * 0.95;
+    // Calculate the scale to match the SVG sizing - larger now with smaller modal
+    const maxWidth = Math.min(containerWidth * 1.0, 1400);
+    const maxHeight = containerHeight * 1.0;
     const scale = Math.min(maxWidth / svgWidth, maxHeight / svgHeight);
 
     const scaledWidth = svgWidth * scale;
@@ -102,9 +102,9 @@
 
     const offsetX = (containerWidth - scaledWidth) / 2;
     // Position mushroom in upper portion with spacing from top, leaving room for modal at bottom
-    // Use 8% top margin, center in remaining upper 60% of space
-    const topMargin = containerHeight * 0.08;
-    const availableHeight = containerHeight * 0.6;
+    // Use 6% top margin, center in remaining upper 70% of space (more space since modal is smaller)
+    const topMargin = containerHeight * 0.06;
+    const availableHeight = containerHeight * 0.7;
     const offsetY = topMargin + (availableHeight - scaledHeight) / 2;
 
     return { scale, offsetX, offsetY };
@@ -485,7 +485,8 @@
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
+      // Cmd+Space (Mac) or Ctrl+Space (Windows/Linux) to toggle debug
+      if (e.code === 'Space' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         showDebug = !showDebug;
       }

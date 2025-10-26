@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { getTopAdjectives, getSubmissionCount } from '$lib/db';
 import { getSessionId } from '$lib/session';
+import { env } from '$env/dynamic/private';
 
 export const load: PageServerLoad = async ({ cookies }) => {
   const sessionId = getSessionId(cookies);
@@ -9,6 +10,7 @@ export const load: PageServerLoad = async ({ cookies }) => {
 
   return {
     adjectives,
-    submissionCount
+    submissionCount,
+    submissionEndDate: env.SUBMISSION_END_DATE ? parseInt(env.SUBMISSION_END_DATE) : null
   };
 };
