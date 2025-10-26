@@ -1,5 +1,6 @@
 import type { Handle } from '@sveltejs/kit';
 import { isAuthenticated, isAdminAuthenticated } from '$lib/session';
+import { env } from '$env/dynamic/private';
 
 export const handle: Handle = async ({ event, resolve }) => {
   const { url, cookies } = event;
@@ -33,5 +34,14 @@ export const handle: Handle = async ({ event, resolve }) => {
     });
   }
 
-  return resolve(event);
+  return resolve(event, {
+    transformPageChunk: ({ html }) => {
+      // Inject Umami analytics script if configured
+      if (env.UMAMI_WEBSITE_ID && env.UMAMI_SCRIPT_URL) {
+        const umamiScript = `<script defer src="${env.UMAMI_SCRIPT_URL}" data-website-id="${env.UMAMI_WEBSITE_ID}"></script>`;
+        return html.replace('%sveltekit.head%', `${umamiScript}%sveltekit.head%`);
+      }
+      return html;
+    }
+  });
 };
