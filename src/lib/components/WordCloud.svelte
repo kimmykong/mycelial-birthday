@@ -337,16 +337,20 @@
 
     // Start with larger scale for fewer words
     // Scale from 1.0 (30+ words) to 2.0 (1-5 words)
+    // But reduce on mobile (small screens)
     const wordCount = wordsToDisplay.length;
+    const isMobile = containerWidth < 640;
     let initialScaleFactor = 1.0;
     if (wordCount <= 5) {
-      initialScaleFactor = 2.0;
+      initialScaleFactor = isMobile ? 1.4 : 2.0;
     } else if (wordCount <= 10) {
-      initialScaleFactor = 1.6;
+      initialScaleFactor = isMobile ? 1.2 : 1.6;
     } else if (wordCount <= 15) {
-      initialScaleFactor = 1.4;
+      initialScaleFactor = isMobile ? 1.0 : 1.4;
     } else if (wordCount <= 20) {
-      initialScaleFactor = 1.2;
+      initialScaleFactor = isMobile ? 0.9 : 1.2;
+    } else {
+      initialScaleFactor = isMobile ? 0.7 : 1.0;
     }
 
     let scaleFactor = initialScaleFactor;
@@ -354,7 +358,9 @@
     let allPlaced = false;
 
     // Try with decreasing scale factors until all words fit
-    while (!allPlaced && scaleFactor >= 0.3) {
+    // Allow smaller minimum on mobile
+    const minScaleFactor = isMobile ? 0.2 : 0.3;
+    while (!allPlaced && scaleFactor >= minScaleFactor) {
       placedWords = [];
       stemCurrentY = 115; // Reset stem Y position for each attempt
 
