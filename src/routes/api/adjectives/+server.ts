@@ -16,10 +16,10 @@ export const POST: RequestHandler = async ({ request, cookies, getClientAddress 
   const sessionId = getSessionId(cookies, newSession === true);
   const clientIp = getClientAddress();
 
-  // Rate limiting: 10 submissions per minute per IP
+  // Rate limiting: 50 submissions per minute per IP (increased for testing)
   const rateLimited = await isRateLimited({
     key: `adjective:${clientIp}`,
-    limit: 10,
+    limit: 20,
     window: 60
   });
 

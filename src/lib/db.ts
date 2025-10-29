@@ -60,20 +60,20 @@ export async function getTopAdjectives(limit: number = 30): Promise<Adjective[]>
   const redis = getRedis();
   if (!redis) return [];
 
-  // Get top words from sorted set (highest scores first)
-  const words = await redis.zrevrange('adjectives:sorted', 0, limit - 1);
+  // Get top words from sorted set with scores (counts) in one call
+  // WITHSCORES returns [word1, score1, word2, score2, ...]
+  const results = await redis.zrevrange('adjectives:sorted', 0, limit - 1, 'WITHSCORES');
 
-  if (!words || words.length === 0) {
+  if (!results || results.length === 0) {
     return [];
   }
 
-  // Get counts for each word
+  // Parse results into adjectives array
   const adjectives: Adjective[] = [];
-  for (const word of words) {
-    const count = await redis.get(`adjectives:${word}`);
-    if (count !== null) {
-      adjectives.push({ word: word, count: parseInt(count) });
-    }
+  for (let i = 0; i < results.length; i += 2) {
+    const word = results[i];
+    const count = parseInt(results[i + 1]);
+    adjectives.push({ word, count });
   }
 
   return adjectives;

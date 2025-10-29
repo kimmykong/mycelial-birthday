@@ -337,16 +337,20 @@
 
     // Start with larger scale for fewer words
     // Scale from 1.0 (30+ words) to 2.0 (1-5 words)
+    // But reduce on mobile (small screens)
     const wordCount = wordsToDisplay.length;
+    const isMobile = containerWidth < 640;
     let initialScaleFactor = 1.0;
     if (wordCount <= 5) {
-      initialScaleFactor = 2.0;
+      initialScaleFactor = isMobile ? 1.4 : 2.0;
     } else if (wordCount <= 10) {
-      initialScaleFactor = 1.6;
+      initialScaleFactor = isMobile ? 1.2 : 1.6;
     } else if (wordCount <= 15) {
-      initialScaleFactor = 1.4;
+      initialScaleFactor = isMobile ? 1.0 : 1.4;
     } else if (wordCount <= 20) {
-      initialScaleFactor = 1.2;
+      initialScaleFactor = isMobile ? 0.9 : 1.2;
+    } else {
+      initialScaleFactor = isMobile ? 0.7 : 1.0;
     }
 
     let scaleFactor = initialScaleFactor;
@@ -354,7 +358,9 @@
     let allPlaced = false;
 
     // Try with decreasing scale factors until all words fit
-    while (!allPlaced && scaleFactor >= 0.3) {
+    // Allow smaller minimum on mobile
+    const minScaleFactor = isMobile ? 0.2 : 0.3;
+    while (!allPlaced && scaleFactor >= minScaleFactor) {
       placedWords = [];
       stemCurrentY = 115; // Reset stem Y position for each attempt
 
@@ -468,7 +474,51 @@
     words = placedWords;
   }
 
+  function drawCanvas() {
+    if (!canvas || !ctx || words.length === 0) return;
+
+    // Set canvas size to match container
+    canvas.width = containerWidth;
+    canvas.height = containerHeight;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, containerWidth, containerHeight);
+
+    // Draw each word
+    for (const word of words) {
+      ctx.font = `bold ${word.size}px Arial, sans-serif`;
+      ctx.fillStyle = word.color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(word.text, word.x, word.y);
+    }
+
+    // Draw debug info if enabled
+    if (showDebug) {
+      const bounds = getMushroomBounds();
+
+      // Draw word bounding boxes
+      ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)';
+      ctx.lineWidth = 1;
+      for (const word of words) {
+        const wordWidth = getTextWidth(word.text, word.size);
+        const wordHeight = getTextHeight(word.text, word.size);
+        ctx.strokeRect(
+          word.x - wordWidth / 2,
+          word.y - wordHeight / 2,
+          wordWidth,
+          wordHeight
+        );
+      }
+    }
+  }
+
   onMount(() => {
+    // Initialize canvas context
+    if (canvas) {
+      ctx = canvas.getContext('2d', { alpha: true });
+    }
+
     const updateSize = () => {
       containerWidth = container.clientWidth;
       containerHeight = container.clientHeight;
@@ -510,6 +560,11 @@
       initializeWords();
     }
   });
+
+  $effect(() => {
+    // Redraw canvas whenever words, showDebug, or container size changes
+    drawCanvas();
+  });
 </script>
 
 <style>
@@ -525,9 +580,17 @@
 </style>
 
 <div bind:this={container} class="relative w-full h-full">
-  <!-- SVG Background -->
-  {#if containerWidth > 0 && containerHeight > 0}
+  <!-- Canvas for rendering words -->
+  <canvas
+    bind:this={canvas}
+    class="absolute inset-0 w-full h-full pointer-events-none"
+  ></canvas>
+
+  <!-- Debug overlays -->
+  {#if containerWidth > 0 && containerHeight > 0 && showDebug}
     {@const bounds = getMushroomBounds()}
+
+    <!-- SVG Debug overlays -->
     <div
       class="absolute pointer-events-none"
       style="
@@ -542,70 +605,35 @@
         xmlns="http://www.w3.org/2000/svg"
         class="w-full h-full"
       >
-        {#if showDebug}
-          <!-- Mushroom outline -->
-          <path
-            d="m 25,95 c 0,-40 40,-65 75,-65 35,0 75,25 75,65 0,10 -5,15 -15,15 h -35 c 0,40 4.21377,84 -25,84 -29.213771,0 -25,-44 -25,-84 H 40 C 30,110 25,105 25,95 Z"
-            fill="none"
-            stroke="black"
-            stroke-width="3"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            opacity="0.3"
-          />
+        <!-- Mushroom outline -->
+        <path
+          d="m 25,95 c 0,-40 40,-65 75,-65 35,0 75,25 75,65 0,10 -5,15 -15,15 h -35 c 0,40 4.21377,84 -25,84 -29.213771,0 -25,-44 -25,-84 H 40 C 30,110 25,105 25,95 Z"
+          fill="none"
+          stroke="black"
+          stroke-width="3"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          opacity="0.3"
+        />
 
-          <!-- Debug: Show actual cap half-circle bounds -->
-          <path d="M 25,110 A 75,75 0 0,1 175,110" fill="none" stroke="red" stroke-width="1" opacity="0.5" />
+        <!-- Debug: Show actual cap half-circle bounds -->
+        <path d="M 25,110 A 75,75 0 0,1 175,110" fill="none" stroke="red" stroke-width="1" opacity="0.5" />
 
-          <!-- Debug: Show actual stem rectangle bounds -->
-          <rect x="78" y="110" width="44" height="78" fill="none" stroke="blue" stroke-width="1" opacity="0.5" />
-        {/if}
+        <!-- Debug: Show actual stem rectangle bounds -->
+        <rect x="78" y="110" width="44" height="78" fill="none" stroke="blue" stroke-width="1" opacity="0.5" />
       </svg>
     </div>
 
-    {#if showDebug}
-      <!-- Debug info overlay -->
-      <div class="absolute top-4 left-4 bg-black/70 text-white text-xs p-2 rounded font-mono pointer-events-none">
-        <div>Scale: {bounds.scale.toFixed(2)}</div>
-        <div>Offset: ({Math.round(bounds.offsetX)}, {Math.round(bounds.offsetY)})</div>
-        <div>Container: {containerWidth}x{containerHeight}</div>
-        <div>Mushroom: {Math.round(200 * bounds.scale)}x{Math.round(220 * bounds.scale)}</div>
-        <div class="mt-1 text-red-400">Red: Cap half-circle (center=(100,110), radius=75)</div>
-        <div class="text-blue-400">Blue: Stem rect (x=78-122, y=110-188)</div>
-        <div class="mt-1 text-green-400">Press SPACE to toggle debug</div>
-      </div>
-    {/if}
-  {/if}
-
-  <!-- Words -->
-  {#each words as word (word.id || word.text)}
-    {@const wordWidth = getTextWidth(word.text, word.size)}
-    {@const wordHeight = getTextHeight(word.text, word.size)}
-
-    {#if showDebug}
-      <!-- Debug: Word bounding box -->
-      <div
-        class="absolute pointer-events-none"
-        style="
-          left: {word.x - wordWidth/2}px;
-          top: {word.y - wordHeight/2}px;
-          width: {wordWidth}px;
-          height: {wordHeight}px;
-          border: 1px solid rgba(0, 255, 0, 0.3);
-        "
-      ></div>
-    {/if}
-
-    <div
-      class="word"
-      style="
-        left: {word.x}px;
-        top: {word.y}px;
-        font-size: {word.size}px;
-        color: {word.color};
-      "
-    >
-      {word.text}
+    <!-- Debug info overlay -->
+    <div class="absolute top-4 left-4 bg-black/70 text-white text-xs p-2 rounded font-mono pointer-events-none z-10">
+      <div>Scale: {bounds.scale.toFixed(2)}</div>
+      <div>Offset: ({Math.round(bounds.offsetX)}, {Math.round(bounds.offsetY)})</div>
+      <div>Container: {containerWidth}x{containerHeight}</div>
+      <div>Mushroom: {Math.round(200 * bounds.scale)}x{Math.round(220 * bounds.scale)}</div>
+      <div>Words: {words.length}</div>
+      <div class="mt-1 text-red-400">Red: Cap half-circle (center=(100,110), radius=75)</div>
+      <div class="text-blue-400">Blue: Stem rect (x=78-122, y=110-188)</div>
+      <div class="mt-1 text-green-400">Press Cmd/Ctrl+SPACE to toggle debug</div>
     </div>
-  {/each}
+  {/if}
 </div>
