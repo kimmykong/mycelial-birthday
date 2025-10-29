@@ -70,38 +70,11 @@
   }
 
 
-  function handleInput(e: Event) {
-    const target = e.target as HTMLInputElement;
-    const inputValue = target.value;
-
-    // Check if user tried to enter invalid characters
-    if (/[^a-zA-Z]/.test(inputValue)) {
-      if (/\s/.test(inputValue)) {
-        error = 'Please enter only one word (no spaces)';
-      } else {
-        error = 'Please enter only letters';
-      }
-    } else {
-      error = ''; // Clear error if input is valid
-    }
-
-    // Only allow alphabetic characters (no spaces, numbers, or special chars)
-    const cleaned = inputValue.replace(/[^a-zA-Z]/g, '');
-    word = cleaned;
-    target.value = cleaned;
-  }
-
   async function handleSubmit(e: Event) {
     e.preventDefault();
 
     if (!word.trim()) {
       error = 'Please enter a word';
-      return;
-    }
-
-    // Additional validation: ensure only alphabetic characters
-    if (!/^[a-zA-Z]+$/.test(word)) {
-      error = 'Please enter only letters (no spaces or special characters)';
       return;
     }
 
@@ -228,7 +201,6 @@
                 bind:this={inputElement}
                 type="text"
                 bind:value={word}
-                oninput={handleInput}
                 disabled={loading}
                 class="w-full px-3 py-2 text-base rounded-xl outline-none transition-all duration-200"
                 style="background: #ffffff; border: 1px solid rgba(139, 115, 85, 0.25); color: #3d2817;"
